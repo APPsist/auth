@@ -1,0 +1,67 @@
+{{!-- Expects: basePath : String, user : Object --}}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>APPsist User Profiles</title>
+<link rel="stylesheet" type="text/css" href="{{{basePath}}}/css/style.css">
+</head>
+<body>
+<h1>Modify a User</h1>
+{{#if error}}<div class="errorMessage">{{error}}</div>{{/if}}
+<form action="{{basePath}}/admin/editUser" method="POST">
+	<input type="hidden" name="id" value="{{user.id}}">
+	
+	<div>
+	<label>ID</label>
+	<div>{{user.id}}</div>
+	</div>
+
+	<div>
+	<label for="firstName">First name*</label>
+	<input name="firstName" type="text" value="{{user.firstName}}" required>
+	</div>
+
+	<div>
+	<label for="lastName">Last name*</label>
+	<input name="lastName" type="text" value="{{user.lastName}}" required>
+	</div>
+	
+	<div>
+	<label for="displayName">Display name*</label>
+	<input name="displayName" type="text" value="{{user.displayName}}" required>
+	</div>
+	
+	<div>
+	<label for="mail">Email address*</label>
+	<input name="mail" type="text" value="{{user.mail}}" required>
+	</div>
+	
+	<div>
+	<label for="position">Position</label>
+	<input name="position" type="text" value="{{user.position}}">
+	</div>
+	
+	<div>
+	<label for="password">Password (leave empty to keep current password)</label>
+	<input name="password" type="password" value="">
+	</div>
+	
+	<div>
+	<label for="pin">PIN</label>
+	<input name="pin" type="password" value="{{user.pin}}" required>
+	</div>
+
+	<div>
+	<label for="resources">Authorized resources</label>
+	<input name="resources"	type="text"	value="{{user.resources}}">
+	</div>
+	
+	<div class="buttonBar">
+		<input type="button" onclick="window.location.assign('{{basePath}}/admin/listUsers')" value="Cancel">
+		<input type="submit" value="Save">
+	</div>
+</form>
+<p>* required</p>
+</body>
+</html>

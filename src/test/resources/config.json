@@ -1,0 +1,9 @@
+{
+	"webserver" : {
+		"port" : 8080,
+		"statics" : "webroot",
+		"basePath" : ""
+	},
+	"debugMode"	: true,
+	"mongoPersistorAddress" : "vertx.mongopersistor"
+}

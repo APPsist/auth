@@ -1,0 +1,41 @@
+{{!-- Expects: basePath : String, users : String[] --}}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>APPsist User Profiles</title>
+<link rel="stylesheet" type="text/css" href="{{{basePath}}}/css/style.css">
+</head>
+<body>
+<table>
+	<thead>
+		<tr>
+			<td>ID</td>
+			<td>Display name</td>
+			<td>Email</td>
+			<td>Position</td>
+			<td>Resources</td>
+			<td>Action</td>
+		</tr>
+	</thead>
+	<tbody>
+		{{#each users}}
+		<tr>
+			<td>{{this.id}}</td>
+			<td>{{this.displayName}}</td>
+			<td>{{this.mail}}</td>
+			<td>{{this.position}}</td>
+			<td>{{this.resources}}</td>
+			<td>
+				<button onclick="window.location.assign('{{basePath}}/admin/editUser?id={{this.id}}')">Edit</button>
+				<button onclick="window.location.assign('{{basePath}}/admin/deleteUser?id={{this.id}}')">Delete</button>
+			</td>
+		</tr>
+		{{/each}}
+	</tbody>
+</table>
+<div class="buttonBar">
+	<button onclick="window.location.assign('{{basePath}}/admin/addUser')">Add user</button>
+</div>
+</body>
+</html>

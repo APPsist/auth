@@ -1,0 +1,10 @@
+{
+  "webserver":{
+    "port":8081,
+    "statics":"webroot",
+    "basePath":"/services/auth"
+  },
+  "debugMode":true,
+  "mongoPersistorAddress":"vertx.mongopersistor",
+  "hoursUntilSessionPurge":24
+}

@@ -1,0 +1,28 @@
+1.3.0 -- 2016-07-01
+- [UPDATE] Added mobile phone number to user profile.
+
+1.2.5
+- [FIX] Added status signal sender.
+
+1.2.4
+- [NEW] Added status signal sender.
+
+1.2.3 -- 16.06.2016
+- [UPDATE] Updated logging.
+
+1.2.2 -- 27.01.2015
+- [NEW] Sessions are now purged on startup.
+- Several bug fixes.
+
+1.2.0 -- 26.01.2015
+- Now blocks simultaneous logins with the same device class.
+
+1.1.1 -- 26.01.2015
+- Now sends offline events when session is purged.
+
+1.1.0 -- 25.09.2015
+- Added session identifier to user status information.
+
+1.0.0 -- 24.09.2015
+- Added API to retrieve public information for all users.
+- Tagged version for milestone 4.
