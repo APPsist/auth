@@ -9,14 +9,21 @@
 <body>
 <form action="{{basePath}}/admin/deleteUser" method="POST">
 <input type="hidden" name="id" value="{{user.id}}">
-<h1>Confirm User Deletion</h1>
+<div class="header">
+  Confirm User Deletion
+</div>
+<div class="panel">
+  <p>Are you sure you want to delete this user?</p>
 
-<p>Are you sure you want to delete this user?</p>
-
-<label>ID</label>
-<div>{{user.id}}</div>
-<label>Display name</label>
-<div>{{user.displayName}}</div>	
+  <div class="field">
+    <label>ID</label>
+    <div class="info">{{user.id}}</div>
+  </div>
+  <div class="field">
+    <label>Display name</label>
+    <div class="info">{{user.displayName}}</div>
+  </div>
+</div>
 
 <div class="buttonBar">
 	<input type="button" onclick="window.location.assign('{{basePath}}/admin/listUsers')" value="Cancel">

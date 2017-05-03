@@ -30,7 +30,12 @@ import de.appsist.commons.misc.StatusSignalConfiguration;
 import de.appsist.commons.misc.StatusSignalSender;
 import de.appsist.service.auth.UserManager.AccessScope;
 import de.appsist.service.auth.connector.MongoDBConnector;
+import de.appsist.service.auth.model.Session;
 import de.appsist.service.auth.model.User;
+import de.appsist.service.iid.server.connector.IIDConnector;
+import de.appsist.service.iid.server.model.ContentBody;
+import de.appsist.service.iid.server.model.Popup;
+import de.appsist.service.iid.server.model.PopupBuilder;
 
 /**
  * Main verticle of the authentication and session service.
@@ -47,6 +52,7 @@ public class MainVerticle extends Verticle {
 	private UserManager userManager;
 	private TokenManager tokenManager;
 	private Map<String, Template> templates = new HashMap<>();
+	private IIDConnector iidConnector;
 
 	@Override
 	public void start() {
@@ -63,6 +69,8 @@ public class MainVerticle extends Verticle {
 		userManager = new UserManager(mongoConnector);
 		tokenManager = new TokenManager();
 		new EBHandler(sessionManager, userManager, tokenManager, vertx.eventBus());
+		
+		iidConnector = new IIDConnector(vertx.eventBus(), IIDConnector.DEFAULT_ADDRESS);
 				
 		initializeHTTPRouting();
 		vertx.createHttpServer()
@@ -126,7 +134,6 @@ public class MainVerticle extends Verticle {
 	private void initializeHTTPRouting() {
 		final String basePath = config.getWebserverBasePath();
 		routeMatcher = new BasePathRouteMatcher(basePath);
-		final String staticFileDirecotry = config.getWebserverStaticDirectory();
 		
 		try {
 			Handlebars handlebars = new Handlebars();
@@ -134,6 +141,7 @@ public class MainVerticle extends Verticle {
 			templates.put("editUser", handlebars.compile("templates/editUser"));
 			templates.put("deleteUser", handlebars.compile("templates/deleteUser"));
 			templates.put("listUsers", handlebars.compile("templates/listUsers"));
+			templates.put("profile", handlebars.compile("templates/profile"));
 		} catch (IOException e) {
 			logger.fatal("Failed to load templates.", e);
 		}
@@ -398,6 +406,127 @@ public class MainVerticle extends Verticle {
 					}
 				});
 			}
+		}).post("/showProfile", new Handler<HttpServerRequest>() {
+			
+			@Override
+			public void handle(final HttpServerRequest request) {
+				final HttpServerResponse response = request.response();
+				request.bodyHandler(new Handler<Buffer>() {
+					@Override
+					public void handle(Buffer buffer) {
+						JsonObject body = new JsonObject(buffer.toString());
+						String sessionId = body.getString("sessionId");
+						String token = body.getString("token");
+						
+						Popup popup = new PopupBuilder()
+							.setBody(new ContentBody.Frame(basePath + "/viewProfile?sid=" + sessionId + "&token=" + token))
+							.setTitle("Benutzerprofil")
+							.build();
+						
+						iidConnector.displayPopup(sessionId, null, SERVICE_ID, popup, new AsyncResultHandler<Void>() {
+							
+							@Override
+							public void handle(AsyncResult<Void> event) {
+								if (event.succeeded()) {
+									response.setStatusCode(200).end();
+								} else {
+									logger.warn("Failed to open profile popup.", event.cause());
+									response.setStatusCode(500).end("Failed to open profile popup: " + event.cause().getMessage());
+								}
+							}
+						});
+					}
+				});
+			}
+		}).get("/viewProfile", new Handler<HttpServerRequest>() {
+
+			@Override
+			public void handle(HttpServerRequest request) {
+				final HttpServerResponse response = request.response();
+				final String sessionId = request.params().get("sid");
+				final String token = request.params().get("token");
+				if (sessionId == null || token == null) {
+					response.setStatusCode(400).end("Missing session identifier and/or token.");
+					return;
+				}
+				
+				sessionManager.getSession(sessionId, new AsyncResultHandler<Session>() {
+					
+					@Override
+					public void handle(AsyncResult<Session> sessionResult) {
+						if (sessionResult.succeeded()) {
+							Session session = sessionResult.result();
+							String userId = session.getUserId();
+							userManager.getUser(userId, AccessScope.PUBLIC, new AsyncResultHandler<User>() {
+								
+								@Override
+								public void handle(AsyncResult<User> userResult) {
+									User user = userResult.result();
+									JsonObject data = new JsonObject();
+									data.putString("userId", user.getId());
+									data.putString("displayName", user.getDisplayName());
+									renderResponse(response, "profile", data);
+								}
+							});
+							
+						} else {
+							response.setStatusCode(400).end("Unknown session.");
+						}
+						
+					}
+				});
+				
+			}
+		}).post("/changePassword", new Handler<HttpServerRequest>() {
+			
+			@Override
+			public void handle(HttpServerRequest request) {
+				final HttpServerResponse response = request.response();
+				request.bodyHandler(new Handler<Buffer>() {
+					
+					@Override
+					public void handle(Buffer buffer) {
+						JsonObject body = new JsonObject(buffer.toString());
+						String userId = body.getString("userId");
+						String oldPwdHash = body.getString("oldPwd");
+						final String newPwdHash = body.getString("newPwd");
+						userManager.authenticateUser(userId, "hash", oldPwdHash, new AsyncResultHandler<User>() {
+							
+							@Override
+							public void handle(AsyncResult<User> userRequest) {
+								final JsonObject responseBody = new JsonObject();
+								response.headers().add("Content-Type", "application/json");
+								if (userRequest.succeeded()) {
+									User user = userRequest.result();
+									user.setHash(newPwdHash);
+									userManager.prepareUpdate(user, new AsyncResultHandler<Void>() {
+										
+										@Override
+										public void handle(AsyncResult<Void> storeRequest) {
+											if (storeRequest.succeeded()) {
+												responseBody.putString("status", "ok").putNumber("code", 200);
+												response.setStatusCode(200);
+												response.end(responseBody.toString());
+											} else {
+												logger.warn("Failed to update user profile", storeRequest.cause());
+												responseBody.putString("status", "error").putNumber("code", 500).putString("message", "Internal error.");
+												response.setStatusCode(500);
+												response.end(responseBody.toString());
+											}
+										}
+									});
+									
+								} else {
+									responseBody.putString("status", "error").putNumber("code", 403).putString("message", "Authentication failed.");
+									response.setStatusCode(403);
+									response.end(responseBody.toString());
+								}
+							}
+						});
+					}
+				});
+				
+			}
 		});
 		
 		
@@ -405,7 +534,8 @@ public class MainVerticle extends Verticle {
 			
 			@Override
 			public void handle(HttpServerRequest request) {
-				request.response().sendFile(staticFileDirecotry + request.path());
+				String filePath = "webroot" + request.path().substring(basePath.length());
+				request.response().sendFile(filePath);
 			}
 		});
 	}

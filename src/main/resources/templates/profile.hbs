@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8">
+  <title>APPsist</title>
+  <meta name="description" content="APPsist User Profile">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="application/javascript" src="js/jquery-3.1.1.min.js"></script>
+  <script type="application/javascript" src="js/sha256.js"></script>
+  <script type="application/javascript" src="js/profile.js"></script>
+  <script type="application/javascript">
+    $(document).ready(function() {
+      AUTH.init('{{userId}}');
+    });
+  </script>
+</head>
+
+<body>
+  <div class="profile header">
+    Simon Schwantzer
+  </div>
+  <div class="panel">
+    <div class="field">
+      <label>Name</label>
+      <div class="info">{{displayName}}</div>
+    </div>
+    <div class="field">
+      <label>ID</label>
+      <div class="info">{{userId}}</div>
+    </div>
+  </div>
+  <!--<div class="panel">
+    <input type="checkbox" name="changePassword" id="changePassword" checked="checked">Passwort ändern
+  </div>-->
+  <div class="panel" id="passwordPanel">
+    <div id="oldPasswordField" class="field">
+      <label for="oldPassword">Altes Passwort</label>
+      <input type="password" name="oldPassword" id="oldPassword" value="">
+      <div class="hint"></div>
+    </div>
+    <div id="newPasswordField" class="field multiple">
+      <label for="newPassword">Neues Passwort</label>
+      <input type="password" name="newPassword" id="newPassword" value="">
+    </div>
+    <div id="newPasswordRepeatField" class="field multiple">
+      <label for="newPasswordRepeat">Neues Passwort (wiederholen)</label>
+      <input type="password" name="newPasswordRepeat" id="newPasswordRepeat" value="">
+      <div class="hint"></div>
+    </div>
+    <!--div class="field">
+      <label for="pin">PIN (optional)</label>
+      <input type="password" name="pin" id="pin" value="">
+    </div-->
+  </div>
+  <div class="buttonBar">
+    <button id="submit" onclick="AUTH.submit();" disabled="">Änderungen übernehmen</button>
+  </div>
+  <div class="message-panel" id="message"></div>
+</body>
+
+</html>

@@ -534,7 +534,7 @@ public class EBHandler {
 			return;
 		}
 		
-		String type, code;
+		final String type, code;
 		if (body.containsField("password")) {
 			type = "password";
 			code = body.getString("password");
@@ -548,23 +548,30 @@ public class EBHandler {
 			message.reply(generateErrorResponse("Invalid authentication method."));
 			return;
 		}
-		userManager.authenticateUser(userId, type, code, new AsyncResultHandler<User>() {
+		
+		userManager.applyUpdate(userId, new AsyncResultHandler<Void>() {
 			
 			@Override
-			public void handle(AsyncResult<User> result) {
-				JsonObject response;
-				if (result.succeeded()) {
-					response = generateResponse();
-					User user = result.result();
-					response.putObject("user", user.asJson());
-					String jwt = tokenManager.generateToken(userId);
-					response.putString("token", jwt);
-				} else {
-					response = generateErrorResponse(result.cause().getMessage());
-				}
-				message.reply(response);
+			public void handle(AsyncResult<Void> refreshOperation) {
+				userManager.authenticateUser(userId, type, code, new AsyncResultHandler<User>() {
+					
+					@Override
+					public void handle(AsyncResult<User> result) {
+						JsonObject response;
+						if (result.succeeded()) {
+							response = generateResponse();
+							User user = result.result();
+							response.putObject("user", user.asJson());
+							String jwt = tokenManager.generateToken(userId);
+							response.putString("token", jwt);
+						} else {
+							response = generateErrorResponse(result.cause().getMessage());
+						}
+						message.reply(response);
+					}
+				});
 			}
-		});
+		});		
 	}
 
 	private void handleGetUserStatus(final Message<JsonObject> message) {

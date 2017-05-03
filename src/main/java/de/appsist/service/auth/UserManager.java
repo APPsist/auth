@@ -94,6 +94,72 @@ public class UserManager {
 	}
 	
 	/**
+	 * Prepares a user model update.
+	 * The update has to be confirmed with {@link UserManager#applyUpdate(String, AsyncResultHandler)}.
+	 * @param user User to update.
+	 * @param resultHandler Result handler to validate success. 
+	 */
+	public void prepareUpdate(User user, final AsyncResultHandler<Void> resultHandler) {
+		JsonObject matcher = new JsonObject()
+			.putString("id", user.getId());
+		
+		JsonObject update = new JsonObject()
+			.putObject("$set", new JsonObject().putString("newHash", user.getHash()));
+		
+		mongo.update("users", matcher, update, false, false, resultHandler);
+	}
+	
+	
+	/**
+	 * Applies a pending user profile update.
+	 * If no update is pending, nothing will happen. 
+	 * @param userId Identifier of the user to update.
+	 * @param resultHandler Result handler to validate success.
+	 */
+	public void applyUpdate(final String userId, final AsyncResultHandler<Void> resultHandler) {
+		JsonObject matcher = new JsonObject()
+			.putString("id", userId)
+			.putObject("newHash", new JsonObject().putBoolean("$exists", true));
+		mongo.findOne("users", matcher, new JsonObject(), new AsyncResultHandler<JsonObject>() {
+			
+			@Override
+			public void handle(AsyncResult<JsonObject> query) {
+				if (query.succeeded() && query.result() != null) {
+					JsonObject userObject = query.result();
+					JsonObject matcher = new JsonObject().putString("id", userId);
+					JsonObject update = new JsonObject()
+						.putObject("$set", new JsonObject().putString("hash", userObject.getString("newHash")))
+						.putObject("$unset", new JsonObject().putString("newHash", ""));
+					mongo.update("users", matcher, update, false, false, resultHandler);
+				} else {
+					resultHandler.handle(new AsyncResult<Void>() {
+						
+						@Override
+						public boolean succeeded() {
+							return true;
+						}
+						
+						@Override
+						public Void result() {
+							return null;
+						}
+						
+						@Override
+						public boolean failed() {
+							return false;
+						}
+						
+						@Override
+						public Throwable cause() {
+							return null;
+						}
+					});
+				}
+			}
+		});
+	}
+	
+	/**
 	 * Authenticates a user
 	 * @param userId Id of the user to authenticate.
 	 * @param authType Type of the authentication. Options are: password (plain text password), hash (hexadecimal SHA-256 hash string), pin
